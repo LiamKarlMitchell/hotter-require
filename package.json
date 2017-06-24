@@ -1,0 +1,38 @@
+{
+  "name": "hotter-require",
+  "version": "1.0.0",
+  "description": "Modifies require to enable hot-reloading of code modules. Updates prototypes and other keys on old cache so that old objects would use new methods. Complains about errors but will retain the previous require cache. Handles dependencies, json and an option to retain state between reloads. Emits when a file has been re-required successfully so your application might do some logic based on that.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiamKarlMitchell/hotter-require.git"
+  },
+  "keywords": [
+    "hot-code",
+    "re-require",
+    "hot-require",
+    "live",
+    "reload",
+    "code",
+    "hot reloading",
+    "invalidate module",
+    "invalidate require",
+    "module dependencies",
+    "react templates",
+    "require cache",
+    "require"
+  ],
+  "author": "Liam Mitchell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LiamKarlMitchell/hotter-require/issues"
+  },
+  "homepage": "https://github.com/LiamKarlMitchell/hotter-require#readme",
+  "dependencies": {
+    "chokidar": "^1.7.0",
+    "dependency-graph": "^0.5.0"
+  }
+}
