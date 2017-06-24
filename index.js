@@ -133,7 +133,7 @@ module.exports = function(options) {
 
     // Note: Using dependency graph because each module has its own require cache but we want a shared one.
     if (!graph.hasNode(resolvedModulePath)) {
-      emitter.emit('loaded', modulePath);
+      emitter.emit('loaded', modulePath, requiredModule);
     }
 
     graph.addNode(this.filename);
@@ -190,8 +190,8 @@ module.exports = function(options) {
           copyLeft(oldExports, newExports);
         }
 
-        emitter.emit('loaded', modulePath);
-        emitter.emit('reloaded', modulePath);
+        emitter.emit('loaded', modulePath, newExports);
+        emitter.emit('reloaded', modulePath, newExports);
       }
     } catch (e) {
       // Restore the old cache?
