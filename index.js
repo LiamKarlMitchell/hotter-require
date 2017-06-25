@@ -98,10 +98,10 @@ module.exports = function(options) {
 
   class HotReloadEmitter extends EventEmitter {};
   const emitter = new HotReloadEmitter();
-  const watcher = chokidar.watch(['**.js', '**.json'], {
+  const watcher = chokidar.watch('**/*.(js|json)', {
     persistent: options.persistent,
     ignoreInitial: true,
-    ignored: /(node_modules)/,
+    ignored: /node_modules|\.git/,
     awaitWriteFinish: options.awaitWriteFinish
   });
 
@@ -171,6 +171,11 @@ module.exports = function(options) {
     var oldExports;
     try {
       var resolvedModulePath = Module._resolveFilename('./' + modulePath, this);
+
+      // Don't reload main module.
+      if (resolvedModulePath === process.mainModule.filename) {
+        return;
+      }
       // Only reload if its in cache already.
       if (graph.hasNode(resolvedModulePath)) {
 
