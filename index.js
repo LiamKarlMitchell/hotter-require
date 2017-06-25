@@ -150,17 +150,19 @@ module.exports = function(options) {
       copyLeft(target.prototype, source.prototype);
     }
 
+    // Purge old keys that no longer exist first.
+    for (var key in target) {
+      if (source[key] === undefined) {
+        delete target[key];
+      }
+    }
+    // Copy over the new keys.
     for (var key in source) {
       target[key] = source[key];
 
       // Handle functions with prototypes exported.
       if (target[key].prototype && source[key].prototype) {
         copyLeft(target[key].prototype, source[key].prototype);
-      }
-    }
-    for (var key in target) {
-      if (source[key] === undefined) {
-        delete target[key];
       }
     }
   }
