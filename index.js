@@ -96,30 +96,61 @@ module.exports = function(options) {
     }
   }
 
+
   class HotReloadEmitter extends EventEmitter {};
   const emitter = new HotReloadEmitter();
-  const watcher = chokidar.watch('**/*.(js|json)', {
-    persistent: options.persistent,
-    ignoreInitial: true,
-    ignored: /node_modules|\.git/,
-    awaitWriteFinish: options.awaitWriteFinish
-  });
+  var watcher;
 
-  // Note: It may take sometime for chokidar to be ready.
-  // Generally it seems to be enough time before changes are made, but if you are running tests
-  // Then you will want to wait for this event before continuing your applications code.
-  watcher.on('ready', function() {
-    emitter.emit('ready');
-  });
+  function watch() {
+    watcher = chokidar.watch('**/*.(js|json)', {
+      persistent: options.persistent,
+      ignoreInitial: true,
+      ignored: /node_modules|\.git/, // TODO: Any file beginning with . to cover other source controls?
+      awaitWriteFinish: options.awaitWriteFinish
+    });
 
-  // Expose the watcher just in-case.
-  emitter.watcher = watcher;
+    // Note: It may take sometime for chokidar to be ready.
+    // Generally it seems to be enough time before changes are made, but if you are running tests
+    // Then you will want to wait for this event before continuing your applications code.
+    watcher.on('ready', function() {
+      emitter.emit('ready');
+    });
 
-  watcher.on('change', function(modulePath) {
+    // Expose the watcher just in-case.
+    emitter.watcher = watcher;
+
+    watcher.on('change', function(modulePath) {
+      emitter.emit('change', modulePath);
+      // Option to not reload on prod? // if (process.env.NODE_ENV === 'production') {
+      emitter.reload(modulePath);
+    });
+  }
+
+  // A way to disable watching on init.
+  if (!options.noWatch) {
+    watch();
+  }
+
+  this.stopWatching = function HotterRequire_stopWatching() {
+    if (watcher) {
+      watcher.close();
+    }
+    watcher = null;
+  }
+
+  this.startWatching = function HotterRequire_startWatching() {
+    if (!watcher) {
+      watch();
+    }
+  }
+
+  // TODO: A way to pass in data either as text or buffer to use in place of require call?
+  //       This would require re-writing to have same functionality as require without touching disk.
+
+  this.reload = function HotterRequire_reload(modulePath) {
     emitter.emit('change', modulePath);
-    // Option to not reload on prod? // if (process.env.NODE_ENV === 'production') {
     emitter.reload(modulePath);
-  });
+  }
 
   // This code modified from code by Kenneth Chung.
   const graph = new DepGraph();

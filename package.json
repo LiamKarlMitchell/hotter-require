@@ -33,6 +33,7 @@
   "homepage": "https://github.com/LiamKarlMitchell/hotter-require#readme",
   "dependencies": {
     "chokidar": "^1.7.0",
+    "debug": "^3.1.0",
     "dependency-graph": "^0.5.0"
   }
 }
