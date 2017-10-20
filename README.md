@@ -58,6 +58,32 @@ Manually reload a module path. (Useful it not using watcher).
 hotter.reload(modulePath);
 ```
 
+Other event emitter labels.
+post-change
+not-loaded
+
+Change event emitter can be used to reject a reload.
+Check the path, if it matches your critera to ignore, set the 2nd arguments ignore value to true.
+
+```js
+hotter.on('change', function(modulePath, feedback){
+    if (modulePath.indexOf('_noreload')>-1) {
+        feedback.ignore = true;
+    }
+})
+```
+
+Want to watch your parent directory's changes?
+How about watching another file type as well but only in one tree of directory?
+
+No problem.
+```js
+hotter.watcher.unwatch('**/*.(js|json)');
+hotter.watcher.add('../**/*.(js|json)');
+hotter.watcher.add('../structures/**/*.h');
+```
+
+
 Note: I intend to add in functionality to load from data/text passed in as the 2nd parameter rather than from disk.
       But this does involve writing my own require functionality, currently I just wrap normal function.
       An issue has been made for this. [#8](/issues/8)
