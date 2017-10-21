@@ -151,7 +151,14 @@ module.exports = function(options) {
       persistent: options.persistent,
       ignoreInitial: true,
       ignored: /node_modules|\.git/, // TODO: Any file beginning with . to cover other source controls?
-      awaitWriteFinish: options.awaitWriteFinish
+      awaitWriteFinish: options.awaitWriteFinish,
+      atomic: options.atomic || true,
+      awaitWriteFinish: {
+          stabilityThreshold: options.stabilityThreshold || 300,
+          pollInterval: options.pollInterval || 50
+      },
+      interval: options.interval || 100,
+      binaryInterval: options.binaryInterval || 300
     });
 
     // Note: It may take sometime for chokidar to be ready.
@@ -503,13 +510,17 @@ module.exports = function(options) {
 
   function reload(modulePath, src) {
     var oldExports;
-    var resolvedModulePath = Module._resolveFilename(modulePath, this);
+
+    var resolvedModulePath = path.resolve(modulePath);
+
+    // Don't reload main module/script.
+    if (resolvedModulePath === process.mainModule.filename) {
+      emitter.emit('not-reloaded', modulePath);
+      return;
+    }
+
+    resolvedModulePath = Module._resolveFilename(modulePath, this);
     try {
-      // Don't reload main module.
-      if (resolvedModulePath === process.mainModule.filename) {
-        emitter.emit('not-reloaded', modulePath);
-        return;
-      }
 
       // Only reload if its in cache already.
       if (graph.hasNode(resolvedModulePath)) {
