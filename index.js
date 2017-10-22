@@ -179,9 +179,11 @@ module.exports = function(options) {
     });
   }
 
+  watch();
+
   // A way to disable watching on init.
-  if (!options.noWatch) {
-    watch();
+  if (options.noWatch) {
+    watcher.close();
   }
 
   this.stopWatching = function HotterRequire_stopWatching() {
@@ -396,6 +398,8 @@ module.exports = function(options) {
       return;
     }
 
+    // Note: May need to handle cases where type is changed between source and target...
+
     // Handle Array
     if (Array.isArray(source) && Array.isArray(target)) {
       // TODO: Loop through and copy over if applicable equality?
@@ -417,6 +421,13 @@ module.exports = function(options) {
           if (!target.hasOwnProperty(key)) {
             continue;
           }
+
+          if (source[key] instanceof Function) {
+            target[key] = source[key]
+          } else if (! (source[key] instanceof Object)) {
+            target[key] = source[key]
+          }
+
           // TODO: Decide if we need a has ownProperty check here?
           copyLeft(target[key], source[key]);
         }
@@ -427,6 +438,12 @@ module.exports = function(options) {
           for (key in source) {
             if (!target.hasOwnProperty(key)) {
               continue;
+            }
+
+            if (source[key] instanceof Function) {
+              target[key] = source[key]
+            } else if (! (source[key] instanceof Object)) {
+              target[key] = source[key]
             }
 
             // Check if is instance and has prototype of its own.
@@ -510,7 +527,6 @@ module.exports = function(options) {
 
   function reload(modulePath, src) {
     var oldExports;
-
     var resolvedModulePath = path.resolve(modulePath);
 
     // Don't reload main module/script.
@@ -519,8 +535,14 @@ module.exports = function(options) {
       return;
     }
 
-    resolvedModulePath = Module._resolveFilename(modulePath, this);
+    // State object used for store & restore functionality.
+    var state = {};
+
     try {
+      // TODO: first attempt a custom resolver.
+      if (!path.isAbsolute(resolvedModulePath)) {
+      resolvedModulePath = Module._resolveFilename(modulePath, this);
+      }
 
       // Only reload if its in cache already.
       if (graph.hasNode(resolvedModulePath)) {
@@ -545,17 +567,34 @@ module.exports = function(options) {
         //var newExports = __require.call(Module, resolvedModulePath);
         oldExports = graph.getNodeData(resolvedModulePath);
 
-        var state = {};
         if (oldExports && oldExports.hot && oldExports.hot.store) {
           oldExports.hot.store(state);
         }
-        if (newExports.hot && newExports.hot.restore) {
-          newExports.hot.restore(state);
-        }
 
         if (newExports) {
+
+          // TODO: Move this higher up, delete the functions if they are deleted from newExports
+          var backupHot = oldExports.hot;
+
           // Copy over old cache values for prototypes and other keys/properties.
           copyLeft(oldExports, newExports);
+
+          // Restore the hot object / functions if it was deleted.
+          if (backupHot && !oldExports.hot) {
+            oldExports.hot = backupHot;
+          } else if (backupHot && oldExports.hot) {
+            if (backupHot.store && !oldExports.hot.store) {
+              oldExports.hot.store = backupHot.store;
+            }
+            if (backupHot.restore && !oldExports.hot.restore) {
+              oldExports.hot.restore = backupHot.restore;
+            }
+          }
+
+          // Run the old exports restore if present.
+          if (oldExports && oldExports.hot && oldExports.hot.restore) {
+              oldExports.hot.restore(state);
+            }
         }
 
         emitter.emit('loaded', modulePath, newExports);
@@ -568,6 +607,11 @@ module.exports = function(options) {
       // Restore the old cache?
       if (oldExports) {
         require.cache[resolvedModulePath] = oldExports;
+
+        // Run the old exports hot restore if present.
+        if (oldExports && oldExports.hot && oldExports.hot.store) {
+          oldExports.hot.restore(state);
+        }
       }
       emitter.emit('error', {
         path: modulePath,
