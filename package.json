@@ -1,6 +1,6 @@
 {
   "name": "hotter-require",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Modifies require to enable hot-reloading of code modules. Updates prototypes and other keys on old cache so that old objects would use new methods. Complains about errors but will retain the previous require cache. Handles dependencies, json and an option to retain state between reloads. Emits when a file has been re-required successfully so your application might do some logic based on that.",
   "main": "index.js",
   "scripts": {
