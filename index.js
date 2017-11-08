@@ -117,11 +117,11 @@ function requireFromString(code, filename, opts) {
 var DepGraph = require('dependency-graph').DepGraph;
 
 // Used to stop re-init.
-var selfCache = null;
 
 module.exports = function(options) {
-  if (selfCache) {
-    return selfCache;
+  // Ensure only intalized once (even if it is with different options.)
+  if (global.hotterCache) {
+    return global.hotterCache;
   }
 
   if (options === undefined) {
@@ -552,6 +552,11 @@ module.exports = function(options) {
 
         if (src === undefined) {
           src = fs.readFileSync(modulePath, 'utf8');
+        } else {
+          // Currently, we only support utf8 sources to be reloaded.
+          if (Buffer.isBuffer(src)) {
+            src = src.toString('utf8');
+          }
         }
 
         var newExports;
@@ -623,7 +628,7 @@ module.exports = function(options) {
   // Expose this method just in-case it is wanted.
   emitter.reload = reload;
 
-  selfCache = emitter;
+  global.hotterCache = emitter;
 
   // Return our emitter so that user code may listen for events.
   return emitter;
