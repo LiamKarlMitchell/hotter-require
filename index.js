@@ -345,23 +345,29 @@ module.exports = function(options) {
 
       if (stat && stat.isFile()) {
         var src = fs.readFileSync(tryPath, 'utf8');
-
-        var isJSON = path.extname(tryPath) === '.json';
-        if (isJSON) {
-          moduleExports = JSON.parse(src);
-        } else {
+        extension = path.extname(tryPath);
+        if (extension === '.js' || extension === '.ts' || extension === '.coffee') {
           moduleExports = requireFromString(src, tryPath, {
             parent: this
           });
+        } else if (extension === '.json') {
+          moduleExports = JSON.parse(src);
+        } else if (extension === '.node') {
+          // Native module maybe? Let's try to load it with normal require method.
+          bypass_naive_lookup = true;
+          moduleExports = __require.call(this, modulePath);
+          bypass_naive_lookup = false;
+        } else {
+          // Just give it to require.
+          moduleExports = __require.call(this, modulePath);
         }
+        
       } else {
 
         // This will handle native modules and other things not found by our above checks.
         //Object.keys(process.binding('natives')) // Hmn.. we can check if its a native module but require will do that for us too.
         if (!stat) {
-          bypass_naive_lookup = true;
           moduleExports = __require.call(this, modulePath);
-          bypass_naive_lookup = false;
         }
       }
 
