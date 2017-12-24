@@ -412,10 +412,29 @@ module.exports = function(options) {
       // How to test equality for unknown elements...
       // lets just replace array for now?
       // TODO: Handle multi dimensional array?
-      target.length = 0;
-      source.forEach(function(element) {
-        target.push(element);
-      });
+      // TODO: Handle array that requires copying objects?
+      // TODO: This is more complicated than I thought,
+      // we need to actually test the contents of each array element, either copy_left it
+      // or add it or remove it depending on what happened.
+      // But, we might also have a problem with unset array elements. Lets take the same approach D3 does.
+      // target.length = 0;
+      // source.forEach(function(element) {
+      //   target.push(element);
+      // });
+
+      source.forEach(function(element, index) {
+        // TODO: Check type of element contents if both are set, to copy_left if needed.
+        // if (element instanceof Object) {
+        //   copy_left(target[index], element)
+        // TODO: NOPE THIS WONT WORK FOR OTHER THINGS, index would be out, keys would not map.
+        // We have to simply adjust array like this.
+        // } else {
+          target[index] = element
+        //}
+      })
+
+      // Remove old keys
+      target.length = source.length
     }
     // Handle Object
     else if (source instanceof Object && target instanceof Object) {
@@ -424,10 +443,6 @@ module.exports = function(options) {
 
         // Copy over the new keys.
         for (key in source) {
-          if (!target.hasOwnProperty(key)) {
-            continue;
-          }
-
           if (source[key] instanceof Function) {
             target[key] = source[key]
           } else if (! (source[key] instanceof Object)) {
@@ -437,14 +452,22 @@ module.exports = function(options) {
           // TODO: Decide if we need a has ownProperty check here?
           copyLeft(target[key], source[key]);
         }
+
+        // Delete old key.
+        for (key in target) {
+          if (!source.hasOwnProperty(key)) {
+            //emitter.emit('remove_key', modulePath, key, newExports, oldExports);
+            delete target[key]
+          }
+        }
       } else {
         if (source.prototype === undefined || target.prototype === undefined) {
           // Object at first level.
           // Copy over the new keys.
           for (key in source) {
-            if (!target.hasOwnProperty(key)) {
-              continue;
-            }
+            // if (!target.hasOwnProperty(key)) {
+            //   continue;
+            // }
 
             if (source[key] instanceof Function) {
               target[key] = source[key]
@@ -488,7 +511,24 @@ module.exports = function(options) {
 
 
             }
-            copyLeft(target[key], source[key]);
+            
+            // Merge over key.
+            if (target.hasOwnProperty(key)) {
+              //emitter.emit('update_key', modulePath, key, newExports, oldExports);
+              copyLeft(target[key], source[key]);
+            } else {
+              // Copy over new key.
+              //emitter.emit('add_key', modulePath, key, newExports, oldExports);
+              target[key] = source[key]
+            }
+          }
+
+          // Delete old key.
+          for (key in target) {
+            if (!source.hasOwnProperty(key)) {
+              //emitter.emit('remove_key', modulePath, key, newExports, oldExports);
+              delete target[key]
+            }
           }
         } else {
           // Handle prototype and class.
