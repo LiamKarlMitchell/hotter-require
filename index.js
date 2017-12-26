@@ -291,93 +291,92 @@ module.exports = function(options) {
         bypass_naive_lookup = true
         moduleExports = __require.call(this, modulePath)
         bypass_naive_lookup = false
-        return   
-      }
+      } else {
+        var extension = path.extname(modulePath);
 
-      var extension = path.extname(modulePath);
-
-      if (!stat && extension === '') {
-        try {
-          tryPath = resolvedModulePath + '.js';
-          stat = fs.statSync(tryPath);
-        } catch (e) {
-          // not work.
-        }
-
-        if (!stat) {
+        if (!stat && extension === '') {
           try {
-            tryPath = resolvedModulePath + '.json';
+            tryPath = resolvedModulePath + '.js';
             stat = fs.statSync(tryPath);
           } catch (e) {
             // not work.
           }
-        }
-      }
 
-      if (!stat) {
-
-        var paths = Module._nodeModulePaths(path.dirname(modulePath));
-        for (var i = 0; i < paths.length; i++) {
-          tryPath = path.resolve(paths[i], modulePath);
-          try {
-            stat = fs.statSync(tryPath);
-
-            if (stat) {
-              if (stat.isFile()) {
-                break;
-              }
-            }
-
-          } catch (e) {
-            // Not work.
-          }
-
-          if (!stat && extension === '') {
+          if (!stat) {
             try {
-              tryPath = path.resolve(paths[i], modulePath) + '.js';
+              tryPath = resolvedModulePath + '.json';
               stat = fs.statSync(tryPath);
             } catch (e) {
               // not work.
             }
+          }
+        }
 
-            if (!stat) {
+        if (!stat) {
+
+          var paths = Module._nodeModulePaths(path.dirname(modulePath));
+          for (var i = 0; i < paths.length; i++) {
+            tryPath = path.resolve(paths[i], modulePath);
+            try {
+              stat = fs.statSync(tryPath);
+
+              if (stat) {
+                if (stat.isFile()) {
+                  break;
+                }
+              }
+
+            } catch (e) {
+              // Not work.
+            }
+
+            if (!stat && extension === '') {
               try {
-                tryPath = path.resolve(paths[i], modulePath) + '.json';
+                tryPath = path.resolve(paths[i], modulePath) + '.js';
                 stat = fs.statSync(tryPath);
               } catch (e) {
                 // not work.
               }
+
+              if (!stat) {
+                try {
+                  tryPath = path.resolve(paths[i], modulePath) + '.json';
+                  stat = fs.statSync(tryPath);
+                } catch (e) {
+                  // not work.
+                }
+              }
             }
+
           }
-
         }
-      }
 
-      if (stat && stat.isFile()) {
-        var src = fs.readFileSync(tryPath, 'utf8');
-        extension = path.extname(tryPath);
-        if (extension === '.js' || extension === '.ts' || extension === '.coffee') {
-          moduleExports = requireFromString(src, tryPath, {
-            parent: this
-          });
-        } else if (extension === '.json') {
-          moduleExports = JSON.parse(src);
-        } else if (extension === '.node') {
-          // Native module maybe? Let's try to load it with normal require method.
-          bypass_naive_lookup = true;
-          moduleExports = __require.call(this, modulePath);
-          bypass_naive_lookup = false;
+        if (stat && stat.isFile()) {
+          var src = fs.readFileSync(tryPath, 'utf8');
+          extension = path.extname(tryPath);
+          if (extension === '.js' || extension === '.ts' || extension === '.coffee') {
+            moduleExports = requireFromString(src, tryPath, {
+              parent: this
+            });
+          } else if (extension === '.json') {
+            moduleExports = JSON.parse(src);
+          } else if (extension === '.node') {
+            // Native module maybe? Let's try to load it with normal require method.
+            bypass_naive_lookup = true;
+            moduleExports = __require.call(this, modulePath);
+            bypass_naive_lookup = false;
+          } else {
+            // Just give it to require.
+            moduleExports = __require.call(this, modulePath);
+          }
+          
         } else {
-          // Just give it to require.
-          moduleExports = __require.call(this, modulePath);
-        }
-        
-      } else {
 
-        // This will handle native modules and other things not found by our above checks.
-        //Object.keys(process.binding('natives')) // Hmn.. we can check if its a native module but require will do that for us too.
-        if (!stat) {
-          moduleExports = __require.call(this, modulePath);
+          // This will handle native modules and other things not found by our above checks.
+          //Object.keys(process.binding('natives')) // Hmn.. we can check if its a native module but require will do that for us too.
+          if (!stat) {
+            moduleExports = __require.call(this, modulePath);
+          }
         }
       }
 
