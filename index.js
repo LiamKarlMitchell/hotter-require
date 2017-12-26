@@ -284,6 +284,16 @@ module.exports = function(options) {
         // Assume not found. Because assumption based programming is best practice programming.
       }
 
+      // TODO: WIP Allow to work on node_modules dir?
+      // For now, just use real require call, having an issue with ext-ip module calling fingerprint.js
+      if (tryPath.indexOf('node_modules') > -1) {
+        // Native module maybe? Let's try to load it with normal require method.
+        bypass_naive_lookup = true
+        moduleExports = __require.call(this, modulePath)
+        bypass_naive_lookup = false
+        return   
+      }
+
       var extension = path.extname(modulePath);
 
       if (!stat && extension === '') {
